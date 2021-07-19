@@ -48,40 +48,31 @@ class bongacams(Plugin):
         if len(http_session.cookies) == 0:
             raise PluginError("Can't get a cookies")
         
-        # is online?
         params = {
-            "model_search[display_name][text]": model_name,
-            "_count": 1
-        }
-        r = http_session.get(listing_url, params=params)
-        if r.status_code != 200:
-            self.logger.debug("response for {0}:\n{1}", r.request.url, r.text)
-            raise PluginError("unexpected status code for {0}: {1}", r.url, r.status_code)
-        if r.json()['online'] != 1:
-            raise NoStreamsError(self.url)
-
-        # get all online models
-        listing_params = {
-            "livetab": "female",
+            "livetab": None,
             "online_only": True,
             "offset": 0,
-            "can_pin_models": True,
-            "limit": 3000,
-            "model_search[th_type]": "live",
-            "model_search[sorting]": "camscore",
-            "model_search[display]": "medium"
+            "model_search[display_name][text]": model_name,
+            "_online_filter": 0,
+            "can_pin_models": False,
+            "limit": 1
         }
-        models_list = http_session.get(listing_url, params=listing_params)
-        if models_list.status_code != 200:
-            self.logger.debug("response for {0}:\n{1}", models_list.request.url, r.text)
-            raise PluginError("unexpected status code for {0}: {1}", r.url, r.status_code)
-        http_session.close()
 
-        models_list = models_list.json()
-        schema.validate(models_list)
+        response = http_session.get(listing_url, params=params)
+
+        if response.status_code != 200:
+            self.logger.debug("response for {0}:\n{1}", response.request.url, response.text)
+            raise PluginError("unexpected status code for {0}: {1}", response.url, response.status_code)
+        if response.json()['online_count'] != str(1):
+            self.logger.debug("response for {0}:\n{1}", response.request.url, response.text)
+            raise NoStreamsError(self.url)
+
+        http_session.close()
+        response = response.json()
+        schema.validate(response)
 
         esid = None
-        for model in models_list['models']:
+        for model in response['models']:
             if model['username'] == model_name:
                 if model['room'] != 'public':
                     raise NoStreamsError(self.url)
@@ -99,7 +90,7 @@ class bongacams(Plugin):
                     yield s
             except Exception as e:
                 if '404' in str(e):
-                    self.logger.error('Stream is currently offline or private')
+                    self.logger.error('Stream is currently offline/private/brb')
                 else:
                     self.logger.error(str(e))
                 return
