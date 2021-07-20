@@ -54,8 +54,6 @@ class bongacams(Plugin):
 
         response = http_session.get(listing_url, params=params)
 
-        self.logger.info(response.text)
-
         if len(http_session.cookies) == 0:
             raise PluginError("Can't get a cookies")
         if response.status_code != 200:
