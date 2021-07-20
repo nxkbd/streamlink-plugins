@@ -54,14 +54,13 @@ class bongacams(Plugin):
 
         response = http_session.get(listing_url, params=params)
 
+        self.logger.info(response.text)
+
         if len(http_session.cookies) == 0:
             raise PluginError("Can't get a cookies")
         if response.status_code != 200:
             self.logger.debug("response for {0}:\n{1}".format(response.request.url, response.text))
             raise PluginError("unexpected status code for {0}: {1}".format(response.url, response.status_code))
-        if response.json()['online_count'] != str(1):
-            self.logger.debug("response for {0}:\n{1}".format(response.request.url, response.text))
-            raise NoStreamsError(self.url)
 
         http_session.close()
         response = response.json()
