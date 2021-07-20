@@ -60,8 +60,6 @@ class bongacams(Plugin):
 
         response = http_session.get(listing_url, params=params)
 
-        self.logger.debug(response.text)
-
         if response.status_code != 200:
             self.logger.debug("response for {0}:\n{1}", response.request.url, response.text)
             raise PluginError("unexpected status code for {0}: {1}", response.url, response.status_code)
@@ -72,6 +70,9 @@ class bongacams(Plugin):
         http_session.close()
         response = response.json()
         schema.validate(response)
+        
+        if not model_name.lower() in list([model['username'].lower() for model in response['models']]):
+            raise NoStreamsError(self.url)
 
         esid = None
         for model in response['models']:
@@ -82,7 +83,7 @@ class bongacams(Plugin):
                 model_name = model['username']
 
         if not esid:
-            raise PluginError("unknown error, esid={0}", esid)
+            raise PluginError("unknown error, esid={0} for {1}.\nResponse: {2}".format(esid, model_name, response['models']))
 
         hls_url = f'https://{esid}.bcvcdn.com/hls/stream_{model_name}/playlist.m3u8'
 
