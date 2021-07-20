@@ -36,17 +36,11 @@ class bongacams(Plugin):
         stream_page_domain = match.group(4)
         model_name = match.group(5)
 
-        baseurl = urlunparse((stream_page_scheme, stream_page_domain, '', '', '', ''))
         listing_url = urlunparse((stream_page_scheme, stream_page_domain, LISTING_PATH, '', '', ''))
 
         # create http session and set headers
         http_session = self.session.http
         http_session.headers.update(CONST_HEADERS)
-
-        # get cookies
-        r = http_session.get(baseurl)
-        if len(http_session.cookies) == 0:
-            raise PluginError("Can't get a cookies")
         
         params = {
             "livetab": None,
@@ -60,6 +54,8 @@ class bongacams(Plugin):
 
         response = http_session.get(listing_url, params=params)
 
+        if len(http_session.cookies) == 0:
+            raise PluginError("Can't get a cookies")
         if response.status_code != 200:
             self.logger.debug("response for {0}:\n{1}".format(response.request.url, response.text))
             raise PluginError("unexpected status code for {0}: {1}".format(response.url, response.status_code))
