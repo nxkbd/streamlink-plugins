@@ -60,6 +60,8 @@ class bongacams(Plugin):
 
         response = http_session.get(listing_url, params=params)
 
+        self.logger.debug(response.text)
+
         if response.status_code != 200:
             self.logger.debug("response for {0}:\n{1}", response.request.url, response.text)
             raise PluginError("unexpected status code for {0}: {1}", response.url, response.status_code)
@@ -73,10 +75,11 @@ class bongacams(Plugin):
 
         esid = None
         for model in response['models']:
-            if model['username'] == model_name:
+            if model['username'].lower() == model_name.lower():
                 if model['room'] != 'public':
                     raise NoStreamsError(self.url)
                 esid = model['esid']
+                model_name = model['username']
 
         if not esid:
             raise PluginError("unknown error, esid={0}", esid)
