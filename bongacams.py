@@ -54,6 +54,8 @@ class bongacams(Plugin):
 
         response = http_session.get(listing_url, params=params)
 
+        self.logger.debug(response.text)
+
         if len(http_session.cookies) == 0:
             raise PluginError("Can't get a cookies")
         if response.status_code != 200:
@@ -63,16 +65,18 @@ class bongacams(Plugin):
         http_session.close()
         response = response.json()
         schema.validate(response)
-        
+
         if not model_name.lower() in list([model['username'].lower() for model in response['models']]):
+            raise NoStreamsError(self.url)
+        if str(response['online_count']) == '0':
             raise NoStreamsError(self.url)
 
         esid = None
         for model in response['models']:
             if model['username'].lower() == model_name.lower():
-                if model['room'] != 'public':
-                    raise NoStreamsError(self.url)
-                esid = model['esid']
+                #if model['room'] not in ('public', 'private', 'fullprivate'):
+                #    raise NoStreamsError(self.url)
+                esid = model.get('esid')
                 model_name = model['username']
 
         if not esid:
@@ -87,7 +91,8 @@ class bongacams(Plugin):
                     yield s
             except Exception as e:
                 if '404' in str(e):
-                    self.logger.error('Stream is currently offline/private/brb')
+                    self.logger.error(str(e))
+                    self.logger.error('Stream is currently offline/private/away')
                 else:
                     self.logger.error(str(e))
                 return
