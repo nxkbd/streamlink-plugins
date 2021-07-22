@@ -91,8 +91,8 @@ class bongacams(Plugin):
                     yield s
             except Exception as e:
                 if '404' in str(e):
-                    self.logger.error(str(e))
-                    self.logger.error('Stream is currently offline/private/away')
+                    self.logger.debug(str(e))
+                    self.logger.debug('Stream is currently offline/private/away')
                 else:
                     self.logger.error(str(e))
                 return
